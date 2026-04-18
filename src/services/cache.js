@@ -30,4 +30,9 @@ async function del(key) {
   console.log("Redis test:", val); // should print "hello"
 })();
 
-module.exports = { get, set, del };
+async function flushAll() {
+  await connect();
+  await client.flushAll();
+}
+
+module.exports = { get, set, del, flushAll };
