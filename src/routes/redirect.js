@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db/index");
 const cache = require("../services/cache");
+const geo = require("../services/geo");
+const parser = require("../services/parser");
 
 router.get("/:slug", async (req, res) => {
   const { slug } = req.params;
@@ -55,8 +57,9 @@ async function fireAnalytics(slug, req) {
   const referrer = req.headers["referer"] || null;
   const ua = req.headers["user-agent"] || null;
 
-  // We'll fill in geo + UA parsing in Phase 2
-  // For now just record the click with what we have
+  const { country, city } = geo.lookup(ip);
+  const { device, browser, os } = parser.parse(ua);
+
   const result = await pool.query(`SELECT id FROM urls WHERE slug = $1`, [
     slug,
   ]);
@@ -66,10 +69,11 @@ async function fireAnalytics(slug, req) {
   const slugId = result.rows[0].id;
 
   await Promise.all([
-    pool.query(`INSERT INTO clicks (slug_id, referrer) VALUES ($1, $2)`, [
-      slugId,
-      referrer,
-    ]),
+    pool.query(
+      `INSERT INTO clicks (slug_id, referrer, country, city, device_type, browser, os)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [slugId, referrer, country, city, device, browser, os],
+    ),
     pool.query(`UPDATE urls SET click_count = click_count + 1 WHERE id = $1`, [
       slugId,
     ]),
