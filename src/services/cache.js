@@ -24,12 +24,6 @@ async function del(key) {
   await client.del(key);
 }
 
-(async () => {
-  await set("test", "hello");
-  const val = await get("test");
-  console.log("Redis test:", val); // should print "hello"
-})();
-
 async function flushAll() {
   await connect();
   await client.flushAll();
