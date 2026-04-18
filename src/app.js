@@ -3,9 +3,8 @@ const app = express();
 
 app.use(express.json());
 
-//Health Check
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
-});
+app.get("/health", (req, res) => res.json({ status: "ok" }));
+
+app.use("/api/shorten", require("./routes/shorten"));
 
 module.exports = app;
