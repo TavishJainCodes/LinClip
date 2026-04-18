@@ -8,13 +8,23 @@ router.post("/", async (req, res) => {
   const { url, slug: customSlug, expiresAt } = req.body;
 
   if (!url) {
-    return res.status(400).json({ error: "URL is required" });
+    return res.status(400).json({ error: "url is required" });
+  }
+
+  // Normalize URL
+  let normalizedUrl = url.trim();
+  if (!/^https?:\/\//i.test(normalizedUrl)) {
+    normalizedUrl = "https://" + normalizedUrl;
   }
 
   try {
-    new URL(url);
-  } catch (err) {
-    return res.status(400).json({ error: "Invalid URL" });
+    const parsed = new URL(normalizedUrl);
+    // Ensure there's a valid hostname like youtube.com, not just "https://garbage"
+    if (!parsed.hostname.includes(".")) {
+      return res.status(400).json({ error: "invalid url" });
+    }
+  } catch {
+    return res.status(400).json({ error: "invalid url" });
   }
 
   const slug = customSlug || nanoid(7);
@@ -24,12 +34,12 @@ router.post("/", async (req, res) => {
       `INSERT INTO urls (slug, original_url, expires_at)
             VALUES ($1, $2, $3)
             RETURNING id, slug, original_url, created_at, expires_at`,
-      [slug, url, expiresAt || null],
+      [slug, normalizedUrl, expiresAt || null],
     );
 
     const row = result.rows[0];
 
-    await cache.set(slug, url);
+    await cache.set(slug, normalizedUrl);
 
     return res.status(201).json({
       slug: row.slug,

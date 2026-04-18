@@ -54,8 +54,8 @@ router.get("/:slug", async (req, res) => {
         ),
         pool.query(
           `SELECT DATE(clicked_at)::text as date, COUNT(*) as count FROM clicks
- WHERE slug_id = $1
- GROUP BY date ORDER BY date ASC`,
+            WHERE slug_id = $1
+            GROUP BY date ORDER BY date ASC`,
           [slugId],
         ),
       ]);
